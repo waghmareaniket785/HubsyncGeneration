@@ -1,0 +1,794 @@
+package org.example;
+
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.bouncycastle.oer.Switch;
+import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.Assert;
+import org.testng.ITestResult;
+import org.testng.annotations.*;
+import utils.ExcelUtil;
+import utils.ScreenshotUtil;
+import utils.ScreenRecorderUtil;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.util.Date;
+import java.util.Map;
+import java.util.Set;
+import java.util.List;
+
+
+
+
+public class App
+{
+    String newValue;
+
+    WebDriver driver;
+    ScreenshotUtil screenshotUtil;
+
+    @BeforeMethod
+    @Parameters("testname")
+    public void setUp(@Optional("DefaultTest") String testname) throws Exception {
+        // Set the path for ChromeDriver (replace with your actual path)
+        ExcelUtil.ensureCleanTestReportSheet("testData/TestData.xlsx", "TestReport");
+        ScreenRecorderUtil.startRecording(testname);
+        System.setProperty("webdriver.chrome.driver", "C:\\Users\\aw35939\\Downloads\\chromedriver-win64\\chromedriver-win64\\chromedriver.exe");
+        driver = new ChromeDriver();
+
+        // Maximize the browser window
+        driver.manage().window().maximize();
+
+
+        // Navigate to the login page
+        driver.get("https://auth.hubsync.com/oauth2/authorize?client_id=c51c99fd-7319-47de-b95f-49a438bbcc46&response_type=code&redirect_uri=https%3A%2F%2Fapi.eisneramper.uat.hubsync.com%2Fauth%2Fcallback&scope=openid+offline_access&state=aHR0cHM6Ly9laXNuZXJhbXBlci51YXQuaHVic3luYy5jb20v%3AZWlzbmVyYW1wZXIudWF0Lmh1YnN5bmMuY29t%3A7dbe15e9-2647-019b-e955-044cf224f377");
+
+
+    }
+
+    @Test
+
+    public void testLogin() throws InterruptedException, IOException, InvalidFormatException {
+        // Read Login Data from Excel
+
+        screenshotUtil = new ScreenshotUtil(driver, "testLogin");  // testLogin is the test case name
+
+
+        String path = "testData/TestData.xlsx";  // Path updated based on your folder
+        Map<String, String> loginData = ExcelUtil.readTestData(path, "logindata");
+
+        String username = loginData.get("userName");
+        String password = loginData.get("password");
+
+        System.out.println("Username: " + username);
+//        System.out.println("Password: " + password);
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+
+// Login actions
+        WebElement usernameField = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("loginId")));
+        usernameField.sendKeys(username);
+
+        WebElement passwordField = driver.findElement(By.id("password"));
+        passwordField.sendKeys(password);
+
+        WebElement loginButton = driver.findElement(By.id("loginButton"));
+        loginButton.click();
+
+// Wait for successful login (presence of user's name)
+        String expectedUsername = "Aniket Rohidas Waghmare";
+        WebElement usernameElement = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Aniket Rohidas Waghmare']")));
+        String actualUsername = usernameElement.getText();
+
+// Screenshot capture
+        screenshotUtil.captureScreenshot("Login successful as EL Creator");
+
+// Assertion
+        Assert.assertEquals(actualUsername, expectedUsername, "Login failed.");
+        System.out.println("Login successful as EL Creator");
+
+// Navigate through dropdown and workspace
+        WebElement dropDownMenu = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//*[name()='svg']")));
+        dropDownMenu.click();
+
+        WebElement watchingOption = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Watching']"))); // Only needed if some action happens here
+
+        WebElement workspaceOption = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//*[text()='Workspaces']")));
+        workspaceOption.click();
+
+// Wait for workspace page to load
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Workspaces']")));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='New Workspace']")));
+        Thread.sleep(3000);
+
+
+//        Need a solution for this
+
+//        WebElement initialsearchbox = driver.findElement(By.xpath("//*[text()='Quick Search']"));
+////        WebElement searchbox = driver.findElement(By.xpath("//*[@class='e-input-group e-control-wrapper']"));
+//        initialsearchbox.click();
+//        initialsearchbox.sendKeys("ETI Engagement Letter Wizard");
+//        initialsearchbox.submit();
+
+//        WebElement searchboxinput = driver.findElement(By.xpath("//*[@type='text']"));
+//        searchboxinput.click();
+//        searchboxinput.sendKeys("ETI Engagement Letter Wizard");
+//        searchboxinput.submit();
+//        driver.switchTo().frame("e-dropdown-btn_26-popup");
+
+//        WebElement newSearchBox = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//*[@type='text']")));
+//////         Replace with your new search box's XPath or ID
+//        newSearchBox.sendKeys("ETI Engagement Letter Wizard");
+//        newSearchBox.sendKeys(Keys.ENTER);
+
+//
+//        driver.findElement(By.xpath("//*[text()=\"Quick Search\"]")).click();
+//        WebElement SearchBoxInput = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@class=\"e-control e-textbox e-lib e-input\"]")));
+//        SearchBoxInput.sendKeys("ETI Engagement Letter Wizard Integration");
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()=\"ETI Engagement Letter Wizard Integration\"]")));
+
+        WebElement workspaceOpen = driver.findElement(By.xpath("//*[text()='ETI Engagement Letter Wizard Integration']"));
+        workspaceOpen.click();
+
+
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//*[text()='Databases'])[1]")));
+
+
+        WebElement openELSection = driver.findElement(By.xpath("//*[@href='/workspaces/4fe81beb-4c8c-46b0-b7e3-16f9a0d65073/el']"));
+        openELSection.click();
+        screenshotUtil.captureScreenshot("ETI workspace open");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@class='header-bar_title__tF1hZ']")));
+
+
+        WebElement clickonCreateButton = driver.findElement(By.xpath("//*[text()='Create Letter']"));
+        clickonCreateButton.click();
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//*[text()='Engagement Letters'])[2]")));
+
+
+        WebElement clickonEngagementLetterFolder = driver.findElement(By.xpath("(//*[text()='Engagement Letters'])[2]"));
+        clickonEngagementLetterFolder.click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@title='Engagement Letter - Accrual or Provision']")));
+
+
+        WebElement selectTheTemplate = driver.findElement(By.xpath("//*[@title='Engagement Letter - Entity']"));
+        selectTheTemplate.click();
+        screenshotUtil.captureScreenshot("Template is selected");
+        System.out.println("Template Selected as Entity");
+//        WebElement assertofselectedTemplate = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("")));
+
+        WebElement clickOnNextButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//*[text()=\"Next\"]")));
+        clickOnNextButton.click();
+        System.out.println("Navigate to Client Information Page");
+        screenshotUtil.captureScreenshot("Navigate to Client Information Page");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Client Information']")));
+
+
+//   driver.findElement(By.xpath("//*[text()=\"Select Client(s)\"]")).click();
+//   wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@id=\"ClientsProjectsModal\"]")));
+//   wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()=\"ERR\"]")));
+//
+////        SelecttheClient.click();
+////        WebElement assertofClientPage = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//*[text()=\"Filters\"]")));
+////
+////        Thread.sleep(4000);
+//
+//        WebElement EnterClientNumber = driver.findElement(By.xpath("//*[@id='textbox_1234']"));
+//        EnterClientNumber.click();
+//        EnterClientNumber.sendKeys("1147097");
+//////        EnterClientNumber.click();
+
+//        driver.switchTo().frame("modals");
+//
+//        WebElement searchBox = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//*[@placeholder='Search']")));
+////        searchBox.click();
+//        searchBox.clear();
+//        searchBox.sendKeys("1147097");
+
+
+////        for First Client
+//
+//        WebElement initialsearchBox = driver.findElement(By.xpath("//*[@class='e-dropdownbase']"));
+//        initialsearchBox.sendKeys("1147104");
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Test-Henry Brady-HS-12-16-Sub-1']")));
+//
+//        WebElement clickonArrow = driver.findElement(By.xpath("//*[@class='e-icons e-icon-expandable ']"));
+//        clickonArrow.click();
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='2025 Tax Individual Test-Henry Brady-HS-12-16-Sub-1']")));
+//
+//
+//        WebElement selecttheProject = driver.findElement(By.xpath("//*[text()='2025 Tax Individual Test-Henry Brady-HS-12-16-Sub-1']"));
+//        selecttheProject.click();
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//span[text()='Client Information']")));
+//
+//
+//        WebElement clickOnPage = driver.findElement(By.xpath("//span[text()='Client Information']"));
+//        clickOnPage.click();
+//        clickOnPage.click();
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//div[text()='Test-Henry Brady-HS-12-16-Sub-1'])[1]")));
+//
+//
+////        String expectedClientName = String.valueOf(By.xpath("//div[text()=\"Test-Henry Brady-HS-12-16-Sub-1\"][1]"));;
+//        String expectedClientName = "Client: Test-Henry Brady-HS-12-16-Sub-1";
+//        WebElement clientName = driver.findElement(By.xpath("(//div[text()='Test-Henry Brady-HS-12-16-Sub-1'])[1]"));
+//        String actualClientName = clientName.getText();
+//        Assert.assertEquals(actualClientName,expectedClientName,"Client not selected");
+//
+//        WebElement navigateToNextPage = driver.findElement(By.xpath("//*[text()='Next']"));
+//        navigateToNextPage.click();
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//*[text()='General Info'])[2]")));
+
+//for fees section
+//        logic 1 (only for WP=1)
+
+//        //  Select workpackage from Excel
+//
+//        String workpackageId = data.get("workpackageId");
+//        WebElement workpackageSelection = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//li[@data-value='" + workpackageId + "']")));
+//        workpackageSelection.click();
+//
+//// Navigate to Fees tab
+//        driver.findElement(By.xpath("(//*[text()='Fees'])[2]")).click();
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Number of Installments*']")));
+//
+////  Choose number of installments from dropdown
+//        WebElement numberOfElementChoose = driver.findElement(
+//                By.xpath("//*[@class='e-input-group-icon e-ddl-icon e-search-icon']"));
+//        numberOfElementChoose.click();
+//
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@class='e-content e-dropdownbase']")));
+//        String numberOfInstallments = data.get("numberOfInstallments");
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(
+//                By.xpath("//li[@data-value='" + numberOfInstallments + "']"))).click();
+//
+////  Generate table structure
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Generate table Structure']")));
+//        driver.findElement(By.xpath("//*[text()='Generate table Structure']")).click();
+//        Thread.sleep(3000);
+//
+////  Enter installment values
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(
+//                By.xpath("//*[text()='Workpackage Configuration Table']")));
+//
+//        WebElement enterFirstValue = driver.findElement(
+//                By.xpath("//*[@placeholder='" + workpackageId + ", 1 Inst*']"));
+//        enterFirstValue.sendKeys(data.get("firstInstallmentValue"));
+//        enterFirstValue.sendKeys(Keys.ENTER);
+//
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//*[@aria-valuenow='32'])[1]"))); // Adjust or skip if dynamic
+//
+//        WebElement enterSecondValue = driver.findElement(
+//                By.xpath("//*[@placeholder='" + workpackageId + ", 2 Inst*']"));
+//        enterSecondValue.sendKeys(data.get("secondInstallmentValue"));
+//        enterSecondValue.sendKeys(Keys.ENTER);
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@aria-valuenow='65']"))); // Adjust or skip if dynamic
+//
+////  Enter installment dates
+//        driver.findElement(By.xpath("//*[@name=\"['Date 1 Inst']\"]")).sendKeys(data.get("firstInstallmentDate"));
+//        driver.findElement(By.xpath("(//*[text()='Fees'])[2]")).click();
+//
+//        driver.findElement(By.xpath("//*[@name=\"['Date 2 Inst']\"]")).sendKeys(data.get("secondInstallmentDate"));
+//        driver.findElement(By.xpath("(//*[text()='Fees'])[2]")).click();
+//
+////  Capture screenshot and navigate next
+//        screenshotUtil.captureScreenshot("Fees Page with the values entered");
+//        WebElement navigateToAdditionalTaxServicePage = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Next']")));
+//        navigateToAdditionalTaxServicePage.click();
+//
+//        System.out.println("Navigate to Additional Tax Services Page");
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//*[text()='Additional Tax Services'])[2]")));
+//        screenshotUtil.captureScreenshot("Additional Tax Services Page");
+
+
+// Read Login Data
+// Read Login Data from Excel
+//        String path = "testdata/TestData.xlsx";  // Path updated based on your folder
+//        Map<String, String> loginData = ExcelUtil.readTestData(path, "logindata");
+
+// Read Client Data
+//        String filepath = "testdata/TestData.xlsx";
+        Map<String, String> clientData = ExcelUtil.readTestData(path, "clientELData");
+//        System.out.println("Client Data: " + clientData);
+
+        String clientNumber = clientData.get("clientNumber");
+        String clientName = clientData.get("clientName");
+        String projectNumber = clientData.get("projectNumber");
+        String salutation = clientData.get("salutationTitle");
+        String workpackageIdsRaw = clientData.get("workpackageIds");
+        String numberOfInstallments = clientData.get("numberOfInstallments");
+        String installmentValuesRaw = clientData.get("installmentValues");
+        String installmentDatesRaw = clientData.get("installmentDates");
+
+// Start test flow
+        System.out.println("Client #: " + clientNumber + ", Name: " + clientName + ", Project #: " + projectNumber);
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Select Client(s)']")));
+
+// Select Client and Project
+        driver.findElement(By.xpath("//*[@class='e-dropdownbase']")).sendKeys(clientNumber);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='" + clientNumber + "']")));
+       WebElement dropdownOfProject = driver.findElement(By.xpath("//*[@class='e-icons e-icon-expandable ']"));
+       dropdownOfProject.click();
+
+       Thread.sleep(2000);
+        WebElement selectProject = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='" + projectNumber + "']")));
+        screenshotUtil.captureScreenshot("Selecting the Project");
+        selectProject.click();
+        WebElement doubleCLickAction = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//span[text()='Client Information']")));
+        Actions actions = new Actions(driver);
+        actions.doubleClick(doubleCLickAction).perform();
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Client Information']")));
+
+
+
+
+// Validate Client Name
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//div[contains(text(),'" + clientName + "')])[1]")));
+        String actualClientName = driver.findElement(By.xpath("(//div[contains(text(),'" + clientName + "')])[1]")).getText();
+        Assert.assertEquals(actualClientName, "Client: " + clientName, "Client not selected");
+        screenshotUtil.captureScreenshot("Client is selected");
+
+// Click on "Next" to go to General Info
+        WebElement nextButton = driver.findElement(By.xpath("//*[text()='Next']"));
+        nextButton.click();
+
+// Wait for General Info section to be visible
+        WebElement generalInfoHeader = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//*[text()='General Info'])[2]")));
+
+// Letter Date input
+        WebElement letterDateInput = driver.findElement(By.xpath("//*[@name=\"['Letter Date']\"]"));
+        letterDateInput.sendKeys("December 12,2024");
+
+// First toggle switch
+        WebElement firstToggle = driver.findElement(By.xpath("(//span[contains(@class, 'e-switch-off')])[1]"));
+        firstToggle.click();
+
+// Salutation dropdown icon
+        WebElement salutationDropdownIcon = driver.findElement(By.xpath("//span[@class='e-input-group-icon e-ddl-icon']"));
+        salutationDropdownIcon.click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//li[@data-value='Mr.']")));
+        Thread.sleep(2000);
+
+// Select "Ms." from dropdown
+        WebElement salutationOption = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//li[@data-value='Ms.']")));
+        salutationOption.click();
+
+// Click somewhere outside to collapse dropdown
+        WebElement generalInfoLabel = driver.findElement(By.xpath("(//*[text()='General Info'])[2]"));
+        generalInfoLabel.click();
+
+// Enter salutation manually (after dropdown selected)
+        WebElement salutationField = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@name=\"['Salutation']\"]")));
+        salutationField.sendKeys(salutation);
+
+// Second toggle switch
+        WebElement secondToggle = driver.findElement(By.xpath("(//span[contains(@class, 'e-switch-off')])[2]"));
+        secondToggle.click();
+
+// Capture screenshot of General Info page
+        screenshotUtil.captureScreenshot("General Info Page");
+
+// Click Next to proceed
+        WebElement nextButtonAfterGeneralInfo = driver.findElement(By.xpath("//*[text()='Next']"));
+        nextButtonAfterGeneralInfo.click();
+
+
+// Tax Compliance Services
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//*[text()='Tax Compliance Services'])[2]")));
+        driver.findElement(By.xpath("//*[text()='Next']")).click();
+
+// Billing Schedule
+        screenshotUtil.captureScreenshot("Billing Schedule Page");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Tax Compliance Services Fee']")));
+        // Click on "Hourly rate"
+        WebElement hourlyRateOption = driver.findElement(By.xpath("//*[@class='e-label' and text()='Hourly rate']"));
+        hourlyRateOption.click();
+
+// Click on "progress billing"
+        WebElement progressBillingOption = driver.findElement(By.xpath("//*[@class='e-label' and text()='progress billing']"));
+        progressBillingOption.click();
+
+// Click on the generic dropdown icon (e.g. for installment values, signatories, etc.)
+        WebElement genericDropdownIcon = driver.findElement(By.xpath("//*[@class='e-input-group-icon e-ddl-icon']"));
+        genericDropdownIcon.click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Select All']")));
+        Thread.sleep(2000);
+
+
+        String[] workpackageIds = workpackageIdsRaw.split(",");
+        for (String wpId : workpackageIds) {
+           WebElement selectingWP = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//li[@data-value='" + wpId.trim() + "']")));
+            selectingWP.click();
+        }
+
+        // Click on Fees section
+        WebElement feesSection = driver.findElement(By.xpath("(//*[text()='Fees'])[2]"));
+        feesSection.click();
+
+// Wait until 'Number of Installments*' is visible
+        WebElement numberOfInstallmentsLabel = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Number of Installments*']")));
+
+// Click on dropdown icon to open installment options
+        WebElement installmentDropdownIcon = driver.findElement(By.xpath("//*[@class='e-input-group-icon e-ddl-icon e-search-icon']"));
+        installmentDropdownIcon.click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@class='e-list-parent e-ul ']")));
+        Thread.sleep(2000);
+
+// Select the appropriate number of installments from dropdown
+        WebElement selectedInstallmentOption = driver.findElement(By.xpath("//li[@data-value='" + numberOfInstallments + "']"));
+        selectedInstallmentOption.click();
+
+// Wait for and click on "Generate table Structure"
+        WebElement generateTableButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//*[text()='Generate table Structure']")));
+        generateTableButton.click();
+
+// Pause briefly to allow table to render
+        Thread.sleep(2000);
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Workpackage Configuration Table']")));
+
+        String[] installmentValues = installmentValuesRaw.split(",");
+        String[] installmentDates = installmentDatesRaw.split(",");
+        int valueIndex = 0;
+        int instCount = Integer.parseInt(numberOfInstallments);
+
+        for (int i = 0; i < instCount; i++) {
+            for (String wpId : workpackageIds) {
+                WebElement valueInput = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//*[@placeholder='" + wpId.trim() + ", " + (i + 1) + " Inst*']")));
+                valueInput.clear();
+                valueInput.sendKeys(installmentValues[valueIndex].trim());
+                valueInput.sendKeys(Keys.ENTER);
+                valueIndex++;
+            }
+
+            WebElement dateInputField = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//*[@name=\"['Date " + (i + 1) + " Inst']\"]")));
+            dateInputField.clear();
+            dateInputField.sendKeys(installmentDates[i].trim());
+            driver.findElement(By.xpath("(//*[text()='Fees'])[2]")).click();
+        }
+
+        screenshotUtil.captureScreenshot("Fees Page with multiple WPs and calculated installments");
+        driver.findElement(By.xpath("//*[text()='Next']")).click();
+
+// Wait for and capture screenshot of "Additional Tax Services" page
+        WebElement additionalTaxServicesSection = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//*[text()='Additional Tax Services'])[2]")));
+        screenshotUtil.captureScreenshot("Additional Tax Services Page");
+
+// Click "Next" from Additional Tax Services
+        WebElement nextFromAdditionalTaxServices = driver.findElement(By.xpath("//*[text()='Next']"));
+        nextFromAdditionalTaxServices.click();
+
+// Wait for and click "Next" from "Other" section
+        WebElement otherSection = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//*[text()='Other'])[2]")));
+        WebElement nextFromOther = driver.findElement(By.xpath("//*[text()='Next']"));
+        nextFromOther.click();
+
+// Wait for and click "Next" from "Terms and Conditions"
+        WebElement termsConditionsSection = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//*[text()='Terms and Conditions'])[2]")));
+        WebElement nextFromTermsConditions = driver.findElement(By.xpath("//*[text()='Next']"));
+        nextFromTermsConditions.click();
+
+// Wait for and click "Next" from "Attachments"
+        WebElement attachmentsSection = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//*[text()='Attachments'])[2]")));
+        WebElement nextFromAttachments = driver.findElement(By.xpath("//*[text()='Next']"));
+        nextFromAttachments.click();
+
+
+// Signatories
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@class='e-icons e-frame e-check']")));
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Reviewers']")));
+        Thread.sleep(6000);
+
+        WebElement signatoriesSection = driver.findElement(By.xpath("(//*[@class='signature-person_container__uzI5y'])[2]"));
+        actions.moveToElement(signatoriesSection).perform();
+
+        WebElement clickOnDeleteButton = driver.findElement(By.xpath("//*[@class='e-icons e-trash large']"));
+        actions.moveToElement(clickOnDeleteButton).click().perform();
+
+        Thread.sleep(2000);
+
+        WebElement addSignatoryButton = driver.findElement(By.xpath("//*[text()='Add signatories']"));
+        addSignatoryButton.click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Add new signatory person']")));
+        WebElement addNameOfSignatory = driver.findElement(By.xpath("//*[@placeholder='Name']"));
+        addNameOfSignatory.sendKeys("Aniket Waghmare");
+        WebElement addEmailOfSignatory = driver.findElement(By.xpath("//*[@placeholder='Email']"));
+        addEmailOfSignatory.sendKeys("aniket.w@yopmail.com");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Cancel']")));
+        WebElement clickOnConfirmButton = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Confirm']")));
+        actions.doubleClick(clickOnConfirmButton).perform();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Signatories']")));
+        screenshotUtil.captureScreenshot("Signatories Page");
+
+
+//        Renaming the EL Name
+        System.out.println("Renaming the EL Name");
+        String timestamp = new SimpleDateFormat("MMddyyyyHHmmss").format(new Date());
+        String newValue = "T-01-Entity" + timestamp;
+        System.out.println("Generated EL Name: " + newValue);
+
+        WebElement editingTheELName = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@class=\"e-editable-value\"]")));
+        editingTheELName.click();
+        WebElement renamingTheEL = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@name='inplaceeditor_935877241_0']")));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@class='e-clear-icon']"))).click();
+        renamingTheEL.sendKeys(newValue);
+        System.out.println("Renaming the EL Name: " + newValue);
+        screenshotUtil.captureScreenshot("Renamed the EL Name");
+
+
+        WebElement clickToClientSignatoriesText = driver.findElement(By.xpath("(//*[text()='Client Signatories'])[2]"));
+        clickToClientSignatoriesText.click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Send for Review']")));
+
+
+        WebElement sendForReviewButton = driver.findElement(By.xpath("//*[text()='Send for Review']"));
+        sendForReviewButton.click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Letter Sent for Review']")));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Return to Draft']")));
+        Thread.sleep(3000);
+        driver.findElement(By.xpath("//*[@class='e-icons e-arrow-left medium']")).click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[contains(text(), '1147097') and //following::span[contains(text(), 'In Review')]]")));
+        String expectedEL = newValue;
+        String actualEl = newValue;
+        Assert.assertEquals(actualEl,expectedEL,"El is not Generated");
+        System.out.println("EL has been Generated");
+        screenshotUtil.captureScreenshot("EL has been Generated");
+
+    }
+
+
+    @Test(priority = 2, dependsOnMethods = "testLogin")
+
+    //        Need to login by Partner
+//need to Add the new EL name to identify
+
+
+    public void approveEngagementLetter() throws Exception {
+//            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+//            // Create a new WebDriver instance for the Partner
+//            WebDriver driver = new ChromeDriver();
+
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(40));
+        driver.manage().window().maximize();
+        screenshotUtil = new ScreenshotUtil(driver, "ApproveEngagementLetter");
+
+        // Open application and login as Partner
+        driver.get("https://eaportal.okta.com/app/UserHome");
+        WebElement usernameField = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@id='okta-signin-username']")));
+        usernameField.sendKeys("Wu1001"); // Replace with Partner's username
+        WebElement passwordField = driver.findElement(By.xpath("//*[@id='okta-signin-password']"));
+        passwordField.sendKeys("Eisner@2025!!"); // Replace with Partner's password
+        driver.findElement(By.xpath("//*[@id='okta-signin-submit']")).click();
+        Thread.sleep(3000);
+        System.out.println("Login as Partner");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='NetSuite CRM']")));
+        String parentWindow = driver.getWindowHandle();
+
+        this.driver.findElement(By.xpath("//*[text()='HubSync UAT']")).click();
+        System.out.println("Login to Hubsync");
+
+        Set<String> allwindows = driver.getWindowHandles();
+        String newWindowHandle = driver.getWindowHandles().stream().filter(handle -> !handle.equals(parentWindow)).findFirst().orElseThrow(() -> new RuntimeException("New window not found"));
+        driver.switchTo().window(newWindowHandle);
+        Thread.sleep(5000);
+        wait.until(ExpectedConditions.urlToBe("https://eisneramper.uat.hubsync.com/dashboard"));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Welcome']")));
+
+        WebElement dropDownMenu = this.driver.findElement(By.xpath("//*[name()='svg']"));
+        dropDownMenu.click();
+
+
+        WebElement option = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Watching']")));
+
+        WebElement workspaceOption = this.driver.findElement(By.xpath("//*[text()='Workspaces']"));
+        workspaceOption.click();
+//            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Workspaces']")));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Quick Search']")));
+        Thread.sleep(3000);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='ETI Engagement Letter Wizard Integration']")));
+
+        WebElement workspaceOpen = this.driver.findElement(By.xpath("//*[text()='ETI Engagement Letter Wizard Integration']"));
+        workspaceOpen.click();
+        System.out.println("Opened ETI Engagement Workspaces");
+
+
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//*[text()='Databases'])[1]")));
+
+
+        WebElement openELSection = this.driver.findElement(By.xpath("//*[@href='/workspaces/4fe81beb-4c8c-46b0-b7e3-16f9a0d65073/el']"));
+        openELSection.click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@class='header-bar_title__tF1hZ']")));
+
+
+
+screenshotUtil.captureScreenshot("EL Section Page");
+        // Locate and double-click the Engagement Letter using the unique name
+        WebElement toOpentheEL = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//*[@class='single-line-text-renderer_single-line__hyFUE'])[1]")));
+        Actions actions = new Actions(driver);
+        actions.doubleClick(toOpentheEL).perform();
+        System.out.println("Opened generated Engagement Letter" );
+
+        // Approve the Engagement Letter
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[contains(text(), 'Routing')]")));
+        driver.findElement(By.xpath("//*[contains(text(), 'Document')]")).click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[contains(text(), 'Return to Draft')]")));
+        screenshotUtil.captureScreenshot("Clicking on Approve button");
+        driver.findElement(By.xpath("//*[contains(text(), 'Approve')]")).click();
+        System.out.println("Approved Engagement Letter");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Letter Approved']")));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Approved']")));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[contains(text(), 'Send to E-Sign')]")));
+        screenshotUtil.captureScreenshot("Clicking on Send to E-Sign button");
+        driver.findElement(By.xpath("//*[text()='Send to E-Sign']")).click();
+        System.out.println("Engagement Letter to E-Sign");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Letter is being queued for E-Sign']")));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Signing in Process']")));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Wet Signature']")));
+
+        screenshotUtil.captureScreenshot("Engagement Letter to E-Sign");
+
+
+
+
+        ((JavascriptExecutor) driver).executeScript("window.open();");
+        allwindows = driver.getWindowHandles();
+        String outlookWindowHandle = allwindows.stream()
+                .filter(handle -> !handle.equals(parentWindow) && !handle.equals(newWindowHandle))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Outlook window not found"));
+        driver.switchTo().window(outlookWindowHandle);
+        driver.get("https://yopmail.com/en/");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Type the Email name of your choice']")));
+        WebElement enterEmailID = driver.findElement(By.xpath("//*[@name='login']"));
+        enterEmailID.sendKeys("aniket.w");
+        driver.findElement(By.xpath("//*[@class='material-icons-outlined f36']")).click();
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='aniket.w@yopmail.com']")));
+        WebElement refreshButton = driver.findElement(By.xpath("//*[@class='md but textu f36']"));
+        refreshButton.click();
+        System.out.println("Login as Client for E-Sign process");
+        Thread.sleep(2000);
+        screenshotUtil.captureScreenshot("Email Page");
+
+        driver.switchTo().frame("ifmail");
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Dear Aniket Waghmare,']")));
+        driver.findElement(By.xpath("//*[text()='Begin Signing']")).click();
+        System.out.println("Open the Assuresign Window ");
+
+
+        allwindows = driver.getWindowHandles();
+        String EsignWindowHandle = allwindows.stream()
+                .filter(handle -> !handle.equals(parentWindow) && !handle.equals(newWindowHandle) && !handle.equals(outlookWindowHandle))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Outlook window not found"));
+        driver.switchTo().window(EsignWindowHandle);
+
+        Thread.sleep(5000);
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Start Signing']")));
+        screenshotUtil.captureScreenshot("E-Sign Window");
+        WebElement clickStartButton = driver.findElement(By.xpath("//*[text()='Start Signing']"));
+        clickStartButton.click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Back']")));
+        WebElement clickAdoptSignature = driver.findElement(By.xpath("//*[text()='Adopt Signature']"));
+        clickAdoptSignature.click();
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Typed with a keyboard']")));
+        WebElement clickRadioTypeWithKeywborad = driver.findElement(By.xpath("(//*[@class='form-control'])[1]"));
+        clickRadioTypeWithKeywborad.click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Full Name']")));
+        driver.findElement(By.xpath("(//*[@type='submit'])[2]")).click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Apply Signature']")));
+        WebElement clickApplySignature = driver.findElement(By.xpath("//*[text()='Apply Signature']"));
+        clickApplySignature.click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//*[text()='Submit'])[1]")));
+        screenshotUtil.captureScreenshot("Submitting the E-Sign process");
+        WebElement clickSubmit = driver.findElement(By.xpath("(//*[text()='Submit'])[2]"));
+        clickSubmit.click();
+        System.out.println("E-Sign process is completed");
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//*[text()='Services'])[1]")));
+
+
+        driver.switchTo().window(newWindowHandle);
+
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Signing in Process']")));
+        WebElement clickBackArrow = driver.findElement(By.xpath("//*[@class='icon-button_wrap__BZQH9 icon-button_only-icon__f6BX2 medium header-bar_back-button__zUXII']"));
+        clickBackArrow.click();
+
+        JavascriptExecutor jsScreenResoluation  = (JavascriptExecutor) driver;
+        jsScreenResoluation.executeScript("document.body.style.zoom='50%'");
+        screenshotUtil.captureScreenshot("EL is generated and displayed in grid view ");
+
+
+
+
+//            String xpathForEL = "//*[contains(text(),'" + newValue + "')]";
+//            WebElement elElement = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpathForEL)));
+
+//            WebElement horizontalScroll = driver.findElement(By.xpath("//*[@class='ag-body-horizontal-scroll-viewport']")); // Replace with actual scrollbar element
+//            actions.clickAndHold(horizontalScroll).moveByOffset(600, 0).release().perform();
+//
+//
+//            WebElement element = driver.findElement(By.xpath("//*[text()='Signed Document']"));
+//            // Scroll horizontally until the element is in view
+//            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({inline: 'end'});", element);
+
+
+
+        // Ensure this matches your PDF name
+//        String ClientNumber ="1147097";
+//        String ELName = newValue;
+//        String partialFileName = ClientNumber + "-" + ELName + ".pdf";  // Format matches " - T-01-Entity02032025150428.pdf"
+//
+//// XPath to find any text that starts with a number and ends with the expected PDF name
+//        Thread.sleep(5000);
+//        WebElement documentLink = driver.findElement(By.xpath("//td[contains(text(), '" + partialFileName + "')]//a"));
+//        documentLink.click();
+
+// Locate and click the dynamically generated PDF file
+//            WebElement pdfElement = driver.findElement(By.xpath("xpathForPDF"));
+//            pdfElement.click();
+
+        // Close the Partner's browser
+        driver.quit();
+        ;
+    }
+
+    @AfterMethod
+    public void tearDown(ITestResult result) throws Exception {
+        String testCaseName = result.getMethod().getMethodName();
+        String status = "";
+        String errorMessage = "";
+        String screenshotPath = "Screenshots/" + testCaseName + ".png";
+        String videoPath = "Recordings/" + testCaseName + ".mp4";
+
+        switch (result.getStatus()) {
+            case ITestResult.SUCCESS:
+                status = "PASSED";
+                break;
+            case ITestResult.FAILURE:
+                status = "FAILED";
+                errorMessage = result.getThrowable() != null ? result.getThrowable().toString() : "Unknown error";
+                break;
+            case ITestResult.SKIP:
+                status = "SKIPPED";
+                break;
+        }
+        System.out.println("Updating result for: " + testCaseName);
+
+        ExcelUtil.appendTestResult("testData/TestData.xlsx", "TestReport", testCaseName, status, errorMessage, screenshotPath, videoPath);
+
+        screenshotUtil.saveAndClose();
+        ScreenRecorderUtil.stopRecording();
+        driver.quit();
+    }
+
+}
+
+
+
+
+
+
