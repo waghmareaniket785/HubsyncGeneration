@@ -1,0 +1,103 @@
+package utils;
+
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.util.Units;
+import org.apache.poi.xwpf.usermodel.*;
+import org.openqa.selenium.*;
+import org.openqa.selenium.io.FileHandler;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.io.*;
+import java.time.Duration;
+
+public class ScreenshotUtil {
+    private WebDriver driver;
+    private XWPFDocument document;
+    private String wordFilePath;
+    private WebDriverWait wait;
+    private String testName;
+
+    public ScreenshotUtil(WebDriver driver, String testName) throws IOException {
+        this.driver = driver;
+        this.testName = testName;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        // Create Screenshots folder if not present
+        File screenshotDir = new File("Screenshots");
+        if (!screenshotDir.exists()) {
+            screenshotDir.mkdirs();
+        }
+
+        // Set path for Word file
+        this.wordFilePath = "Screenshots/" + testName + ".docx";
+        File wordFile = new File(wordFilePath);
+
+        // Delete previous Word file if exists
+        if (wordFile.exists()) {
+            if (wordFile.delete()) {
+                System.out.println("Old Word file deleted for: " + testName);
+            } else {
+                System.err.println("Failed to delete old Word file.");
+            }
+        }
+
+        // Optional: Delete existing screenshots (JPGs)
+        File[] oldImages = screenshotDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".jpg"));
+        if (oldImages != null) {
+            for (File img : oldImages) {
+                img.delete();
+            }
+        }
+
+        // Create new document
+        this.document = new XWPFDocument();
+
+        // Add test case title at the top
+        XWPFParagraph title = document.createParagraph();
+        title.setAlignment(ParagraphAlignment.CENTER);
+        XWPFRun titleRun = title.createRun();
+        titleRun.setText("Test Case: " + testName);
+        titleRun.setBold(true);
+        titleRun.setFontSize(16);
+        titleRun.addBreak(); // Space before steps
+    }
+
+    // Capture Screenshot and Append to Word
+    public void captureScreenshot(String stepName) throws IOException, InvalidFormatException {
+        waitUntilPageLoaded();
+
+        // Capture screenshot and save as JPEG
+        File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+        String imagePath = "Screenshots/" + stepName.replaceAll("\\s+", "_") + ".jpg";
+        File dest = new File(imagePath);
+        FileHandler.copy(src, dest);
+
+        // Create paragraph for step info and image
+        XWPFParagraph paragraph = document.createParagraph();
+        XWPFRun run = paragraph.createRun();
+        run.setText("Step: " + stepName);
+        run.setBold(true);
+        run.addBreak();
+
+        try (InputStream pic = new FileInputStream(dest)) {
+            run.addPicture(pic, XWPFDocument.PICTURE_TYPE_JPEG, imagePath, Units.toEMU(500), Units.toEMU(300));
+        }
+
+        run.addBreak(BreakType.TEXT_WRAPPING); // Or BreakType.PAGE for new page per step
+    }
+
+    // Wait for the page to be fully loaded
+    private void waitUntilPageLoaded() {
+        wait.until(webDriver -> ((JavascriptExecutor) webDriver)
+                .executeScript("return document.readyState").equals("complete"));
+    }
+
+    // Save and close the Word document
+    public void saveAndClose() throws IOException {
+        try (FileOutputStream out = new FileOutputStream(wordFilePath)) {
+            document.write(out);
+        }
+        document.close();
+        System.out.println("Word file saved successfully: " + wordFilePath);
+    }
+}
