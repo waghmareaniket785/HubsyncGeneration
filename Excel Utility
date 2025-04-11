@@ -1,0 +1,142 @@
+package utils;
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
+
+public class ExcelUtil {
+
+    // Read test data using header-value mapping (row 0 = headers, row 1 = values)
+    public static Map<String, String> readTestData(String filePath, String sheetName) throws IOException, InvalidFormatException {
+        Map<String, String> testData = new HashMap<>();
+
+        FileInputStream file = new FileInputStream(new File(filePath));
+        Workbook workbook = WorkbookFactory.create(file);
+        Sheet sheet = workbook.getSheet(sheetName);
+
+        Row headerRow = sheet.getRow(0);
+        Row dataRow = sheet.getRow(1); // Make sure your actual data starts from second row
+
+        if (headerRow == null || dataRow == null) {
+            workbook.close();
+            file.close();
+            throw new RuntimeException("Header or data row is missing in the Excel file.");
+        }
+
+        DataFormatter formatter = new DataFormatter();
+
+        for (int i = 0; i < headerRow.getLastCellNum(); i++) {
+            Cell headerCell = headerRow.getCell(i);
+            Cell valueCell = dataRow.getCell(i);
+
+            if (headerCell != null && valueCell != null) {
+                String key = formatter.formatCellValue(headerCell).trim();
+                String value = formatter.formatCellValue(valueCell).trim();
+                testData.put(key, value);
+            }
+        }
+
+        workbook.close();
+        file.close();
+
+        return testData;
+    }
+
+    // Append a row in the TestReport sheet (creates file/sheet if not present)
+    public static void appendTestResult(
+            String filePath,
+            String sheetName,
+            String testCaseName,
+            String status,
+            String errorMessage,
+            String screenshotPath,
+            String videoPath
+    ) throws IOException {
+
+        Workbook workbook;
+        Sheet sheet;
+
+        File file = new File(filePath);
+        if (file.exists()) {
+            FileInputStream fis = new FileInputStream(file);
+            workbook = WorkbookFactory.create(fis);
+            fis.close();
+        } else {
+            workbook = WorkbookFactory.create(true); // new .xlsx workbook
+        }
+
+        sheet = workbook.getSheet(sheetName);
+        if (sheet == null) {
+            sheet = workbook.createSheet(sheetName);
+            // Create header row
+            Row headerRow = sheet.createRow(0);
+            headerRow.createCell(0).setCellValue("TestCaseName");
+            headerRow.createCell(1).setCellValue("Status");
+            headerRow.createCell(2).setCellValue("ErrorMessage");
+            headerRow.createCell(3).setCellValue("ScreenshotPath");
+            headerRow.createCell(4).setCellValue("VideoPath");
+        }
+
+        // Append row at the end
+        int lastRowNum = sheet.getLastRowNum();
+        Row newRow = sheet.createRow(lastRowNum + 1);
+
+        newRow.createCell(0).setCellValue(testCaseName);
+        newRow.createCell(1).setCellValue(status);
+        newRow.createCell(2).setCellValue(errorMessage);
+        newRow.createCell(3).setCellValue(screenshotPath);
+        newRow.createCell(4).setCellValue(videoPath);
+
+        FileOutputStream fos = new FileOutputStream(filePath);
+        workbook.write(fos);
+        workbook.close();
+        fos.close();
+    }
+
+    // Optional: Clean old test report (only header retained)
+    public static void ensureCleanTestReportSheet(String filePath, String sheetName) throws IOException {
+        File file = new File(filePath);
+        Workbook workbook;
+
+        if (file.exists()) {
+            FileInputStream fis = new FileInputStream(file);
+            workbook = WorkbookFactory.create(fis);
+            fis.close();
+        } else {
+            workbook = WorkbookFactory.create(true); // new workbook (.xlsx)
+        }
+
+        Sheet sheet = workbook.getSheet(sheetName);
+        if (sheet == null) {
+            sheet = workbook.createSheet(sheetName);
+        }
+
+        // Clean up all rows except header
+        int lastRow = sheet.getLastRowNum();
+        for (int i = lastRow; i > 0; i--) {
+            Row row = sheet.getRow(i);
+            if (row != null) {
+                sheet.removeRow(row);
+            }
+        }
+
+        // Ensure headers exist
+        Row headerRow = sheet.getRow(0);
+        if (headerRow == null) {
+            headerRow = sheet.createRow(0);
+            headerRow.createCell(0).setCellValue("TestCaseName");
+            headerRow.createCell(1).setCellValue("Status");
+            headerRow.createCell(2).setCellValue("ErrorMessage");
+            headerRow.createCell(3).setCellValue("ScreenshotPath");
+            headerRow.createCell(4).setCellValue("VideoPath");
+        }
+
+        FileOutputStream fos = new FileOutputStream(filePath);
+        workbook.write(fos);
+        workbook.close();
+        fos.close();
+    }
+}
